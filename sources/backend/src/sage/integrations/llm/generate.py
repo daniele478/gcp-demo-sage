@@ -5,5 +5,12 @@ the Google Gen AI SDK's `generate_content` (see esercizio 09_librerie_python).
 """
 
 
+from sage.integrations.llm.client import get_genai_client
+
 async def generate_text(prompt: str) -> str:
-    return "[MOCK] Nessun modello collegato: implementa integrations/llm/generate.py."
+    client = get_genai_client()
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+    return response.text
