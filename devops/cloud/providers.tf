@@ -7,6 +7,9 @@ terraform {
       version = "~> 6.0"
     }
   }
+
+  backend "gcs" {}
+
 }
 
 provider "google" {
