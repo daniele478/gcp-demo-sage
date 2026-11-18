@@ -4,7 +4,7 @@
 # l'indice sotto abilita `find_nearest` direttamente sul campo `embedding`.
 resource "google_firestore_database" "database" {
   project     = var.project_id
-  name        = var.resource_prefix
+  name        = local.firestore_database_name
   location_id = var.region
   type        = "FIRESTORE_NATIVE"
 

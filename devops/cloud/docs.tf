@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "sage_docs" {
-  name     = "${var.resource_prefix}-sage-docs"
+  name     = local.docs_bucket_name
   project  = var.project_id
   location = var.region
 

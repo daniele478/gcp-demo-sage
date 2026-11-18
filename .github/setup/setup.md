@@ -14,8 +14,9 @@ gcloud config set project <IL_TUO_PROJECT_ID>
 ./.github/setup/setup-gcp-once.sh <PROJECT_ID_CONDIVISO> <tuo-utente-github>/<nome-repo> its-ict-sage-<nome>-<cognome>
 ```
 
-Lo script crea il Workload Identity Pool/Provider e il service account `github-deployer`
-usati dalle pipeline, e stampa in output i valori da usare al passo successivo.
+Lo script crea il Workload Identity Pool/Provider e il service account usati dalle pipeline
+(`github-deployer` con un progetto dedicato, un nome derivato dal prefisso con un progetto
+condiviso), e stampa in output i valori da usare al passo successivo.
 
 ## 2. Configura le variabili GitHub Actions
 
@@ -60,8 +61,8 @@ approvazione prima di `apply`.
   solo `workflow_dispatch` su un repository appena creato. Un commit che tocchi direttamente
   i file in `.github/workflows/` forza la re-indicizzazione.
 - **`terraform.yml` fallisce su "permission denied" (`Policy update access denied` /
-  `setIamPolicy`) durante `plan` o `apply`** — il service account `github-deployer` non ha
-  (o ha perso) `roles/owner`: ricontrolla il passo 4 dello script di bootstrap.
+  `setIamPolicy`) durante `plan` o `apply`** — il service account CI non ha (o ha perso)
+  `roles/owner`: ricontrolla l'assegnazione del ruolo nello script di bootstrap.
 - **Il job `approval` resta bloccato** — verifica che `APPROVERS` contenga esattamente il
   tuo username GitHub (case-sensitive) e che il repository possa creare issue (passo 3).
 - **`deploy.yml` fallisce su "repository not found" in Artifact Registry** — assicurati di

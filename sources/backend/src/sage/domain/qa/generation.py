@@ -2,6 +2,10 @@
 
 from pathlib import Path
 
+from google.api_core.exceptions import GoogleAPICallError
+from google.genai.errors import APIError
+
+from sage.domain.qa.exceptions import SageError
 from sage.domain.qa.models import Chunk
 from sage.integrations.llm.generate import generate_text
 
@@ -24,4 +28,8 @@ def build_prompt(question: str, chunks: list[Chunk]) -> str:
 
 async def generate_answer(question: str, chunks: list[Chunk]) -> str:
     prompt = build_prompt(question, chunks)
-    return await generate_text(prompt)
+    try:
+        return await generate_text(prompt)
+    except (APIError, GoogleAPICallError) as exc:
+        # SageError is what the HTTP layer translates into a 502 (see webapp/apis/qa/router.py).
+        raise SageError(f"Generazione della risposta non riuscita: {exc}") from exc

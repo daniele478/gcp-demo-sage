@@ -26,8 +26,8 @@ Utente ──POST /api/ask──▶ API FastAPI su Cloud Run
 | API | Cloud Run | Servizio HTTP stateless, `POST /api/ask` + `GET /health` |
 | Base di conoscenza | Firestore (Native mode) | Collection `chunks`: testo + embedding + metadati, interrogata con `find_nearest` |
 | LLM ed embedding | Vertex AI (Gemini) | Nessuna API key: autenticazione via ADC / service account |
-| Documenti sorgente | Cloud Storage | Bucket `<project_id>-sage-docs` |
-| Analytics | BigQuery | Tabella `question_log`, scritta in modo sincrono nella richiesta |
+| Documenti sorgente | Cloud Storage | Bucket `<project_id>-sage-docs` (o `<prefisso>-sage-docs` in un progetto condiviso) |
+| Analytics | BigQuery | Tabella `question_log`, scritta in modo sincrono nella richiesta (in questa copia è ancora uno stub, vedi sotto) |
 | Immagini container | Artifact Registry | Popolato dalla pipeline di deploy |
 
 La pipeline di chunking/embedding **non gira dentro l'API**: è lo script
@@ -50,6 +50,10 @@ In entrambi i casi l'evento viene loggato (livello `WARNING`) sui log di Cloud R
 Logging, così è sempre visibile cosa sta succedendo e quale integrazione manca ancora — vedi
 `sources/backend/src/sage/domain/qa/retrieval.py` e
 `sources/backend/src/sage/integrations/bigquery/question_log.py`.
+
+> **Nota su questa copia:** l'analytics su BigQuery non è ancora implementato.
+> `question_log.py` logga solo una riga `[MOCK]`, e in `devops/cloud/` non esiste ancora un
+> dataset BigQuery (né i permessi IAM per scriverci).
 
 ## Struttura del repository
 
@@ -88,17 +92,19 @@ gcloud config set project its-ict-<nome>-<cognome>
 
 ### 2. Configura le variabili locali e Terraform
 
-```bash
-cp sources/backend/.env.example sources/backend/.env
-cp devops/cloud/terraform.tfvars.example devops/cloud/terraform.tfvars
-cp devops/cloud/backend.hcl.example devops/cloud/backend.hcl
-```
+I tre file di configurazione sono già presenti e versionati in questo repository (contengono
+solo identificativi di progetto, nessun segreto):
 
-In tutti e tre i file sostituisci `its-ict-sage-csp26` con il tuo project id reale
+- `sources/backend/.env`
+- `devops/cloud/terraform.tfvars`
+- `devops/cloud/backend.hcl`
+
+Sostituisci `its-ict-sage-csp26` con il tuo project id reale
 (`its-ict-<nome>-<cognome>`); in un progetto condiviso usa il progetto condiviso come
 `project_id` e valorizza anche il prefisso (`SAGE_RESOURCE_PREFIX` in `.env`,
-`resource_prefix` in `terraform.tfvars`, nome del bucket in `backend.hcl`). Questi tre file
-sono nel `.gitignore`: restano solo sulla tua macchina/nel tuo ambiente CI, non finiscono mai nel repository.
+`resource_prefix` in `terraform.tfvars`, bucket `<prefisso>-tfstate` in `backend.hcl`,
+variabile di repository `RESOURCE_PREFIX` per le pipeline). Il prefisso deve essere lo stesso
+in tutti questi punti: se cambia, cambiano i nomi di tutte le risorse.
 
 ### 3. Bootstrap una tantum del progetto GCP e delle pipeline
 
@@ -108,15 +114,14 @@ statiche) e ti guida nella configurazione delle variabili del repository GitHub.
 
 ### 4. Crea l'infrastruttura con Terraform
 
-`devops/cloud/` parte senza risorse: i file `.tf` (bucket, Firestore, BigQuery, Cloud Run,
-IAM, Artifact Registry, ...) li scrivi tu, modulo per modulo, seguendo gli esercizi del
-corso. Restano già pronti solo i file di configurazione (`backend.hcl`, `terraform.tfvars`,
-copiati dai rispettivi `.example` al passo 2).
+Il modulo in `devops/cloud/` è già completo: `services.tf` (API GCP abilitate), `docs.tf`
+(bucket dei documenti), `firestore.tf` (database Native + indice vettoriale), `sage_backend.tf`
+(Artifact Registry, Cloud Run, service account runtime e IAM), oltre a `locals.tf`
+(nomi delle risorse), `variables.tf` e `providers.tf`.
 
-Una volta scritte le risorse, il flusso resta questo, in locale (oppure lanciando
-manualmente il workflow `terraform.yml` — tab **Actions** del repository → *terraform* →
-*Run workflow* — che fa `plan` e poi richiede un'approvazione manuale su una issue prima di
-applicare):
+Il flusso è questo, in locale (oppure lanciando manualmente il workflow `terraform.yml` — tab
+**Actions** del repository → *terraform* → *Run workflow* — che fa `plan` e poi richiede
+un'approvazione manuale su una issue prima di applicare):
 
 ```bash
 cd devops/cloud
@@ -168,14 +173,19 @@ In locale:
 
 ```bash
 cd sources/backend
-docker build -t europe-west6-docker.pkg.dev/<il-tuo-project-id>/sage/sage:manual .
-docker push europe-west6-docker.pkg.dev/<il-tuo-project-id>/sage/sage:manual
-gcloud run deploy sage --project <il-tuo-project-id> --region europe-west6 \
-  --image europe-west6-docker.pkg.dev/<il-tuo-project-id>/sage/sage:manual
+IMAGE=europe-west6-docker.pkg.dev/<il-tuo-project-id>/<il-tuo-prefisso>-sage-backend/<il-tuo-prefisso>-sage-backend:manual
+docker build -t "$IMAGE" .
+docker push "$IMAGE"
+gcloud run deploy <il-tuo-prefisso>-sage-backend --project <il-tuo-project-id> \
+  --region europe-west6 --image "$IMAGE"
 ```
 
-Oppure lascia fare alla pipeline: un push su `main` che tocca `sources/backend/**` avvia
-automaticamente `deploy.yml` (build dell'immagine, push su Artifact Registry, deploy).
+Con un progetto dedicato il prefisso è vuoto e i nomi diventano `sage-backend`
+(immagine `.../sage-backend/sage-backend:manual`, servizio `sage-backend`).
+
+Oppure lancia manualmente il workflow `deploy.yml` (tab **Actions** → *deploy* → *Run
+workflow*): build dell'immagine, push su Artifact Registry, deploy. Non c'è un trigger
+automatico su push: il workflow ha solo `workflow_dispatch`.
 
 Questo deploy funziona anche prima di aver creato Firestore/BigQuery con Terraform (passo 4):
 Sage risponde comunque, vedi [Firestore e BigQuery sono opzionali](#firestore-e-bigquery-sono-opzionali).
@@ -183,7 +193,7 @@ Sage risponde comunque, vedi [Firestore e BigQuery sono opzionali](#firestore-e-
 ### 8. Testa l'API deployata
 
 ```bash
-SAGE_URL=$(gcloud run services describe sage --project <il-tuo-project-id> \
+SAGE_URL=$(gcloud run services describe <il-tuo-prefisso>-sage-backend --project <il-tuo-project-id> \
   --region europe-west6 --format='value(status.url)')
 
 curl -X POST "$SAGE_URL/api/ask" \
@@ -200,15 +210,16 @@ concetti distinti, anche se in un progetto dedicato coincidono:
 |---|---|---|
 | `RESOURCE_PREFIX` | vuoto | `its-ict-sage-<nome>-<cognome>` |
 | Bucket documenti / state | `<project_id>-sage-docs` / `<project_id>-tfstate` | `<prefisso>-sage-docs` / `<prefisso>-tfstate` |
-| Cloud Run, Artifact Registry | `sage` | `<prefisso>-sage` |
-| Service account runtime | `sage-run` | `<prefisso>-sage-run` (accorciato con un hash oltre i 30 caratteri) |
+| Cloud Run, Artifact Registry | `sage-backend` | `<prefisso>-sage-backend` |
+| Service account runtime | `sage-backend-run` | `<prefisso>-sage-backend-run` (accorciato con un hash oltre i 30 caratteri) |
 | Database Firestore | `(default)` | `<prefisso>` |
 | Dataset BigQuery | `sage_analytics` | `<prefisso, con _ al posto di ->_sage_analytics` |
 | Pool WIF e SA di CI (bootstrap) | `github-actions-pool`, `github-deployer` | derivati dal prefisso |
 
 Dove si imposta: `SAGE_RESOURCE_PREFIX` (`sources/backend/.env`), `resource_prefix`
 (`devops/cloud/terraform.tfvars`), variabile di repository GitHub `RESOURCE_PREFIX`, terzo
-argomento di `setup-gcp-once.sh`. Se non è valorizzato, tutto si comporta come prima.
+argomento di `setup-gcp-once.sh`. Se non è valorizzato restano i nomi del progetto dedicato;
+con un prefisso vuoto non creare la variabile `RESOURCE_PREFIX` su GitHub.
 
 ## Pulizia risorse
 

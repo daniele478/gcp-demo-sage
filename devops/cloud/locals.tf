@@ -1,6 +1,23 @@
 locals {
-  # Cloud Run, Artifact Registry, service account: "<prefisso>-<app_name>".
-  app_name = "${var.resource_prefix}-${var.app_name}"
+  # Cloud Run, Artifact Registry, service account: "<prefisso>-<app_name>" in un progetto
+  # condiviso, oppure solo "<app_name>" in un progetto dedicato (prefisso vuoto).
+  app_name = (
+    var.resource_prefix == ""
+    ? var.app_name
+    : "${var.resource_prefix}-${var.app_name}"
+  )
+
+  # Bucket dei documenti: "<project_id>-sage-docs" nel progetto dedicato (stessa regola
+  # documentata nel README), "<prefisso>-sage-docs" in quello condiviso.
+  docs_bucket_name = (
+    var.resource_prefix == ""
+    ? "${var.project_id}-sage-docs"
+    : "${var.resource_prefix}-sage-docs"
+  )
+
+  # In un progetto c'è un solo database "(default)"; in un progetto condiviso ogni studente
+  # ha il proprio database, chiamato come il prefisso.
+  firestore_database_name = var.resource_prefix == "" ? "(default)" : var.resource_prefix
 
   # account_id di un service account: massimo 30 caratteri. Se "<app_name>-run" non ci sta,
   # si tronca e si aggiunge un hash del nome completo per mantenerlo univoco e stabile.
