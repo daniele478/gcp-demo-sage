@@ -31,6 +31,11 @@ class AppConfig(BaseSettings):
     bq_dataset: str = "sage_analytics"
     bq_table: str = "question_log"
 
+    # Instructions (optional): a Markdown file in Cloud Storage that is added to every prompt.
+    # An empty bucket name disables the feature (the answer is generated without them).
+    instructions_bucket_name: str = ""
+    instructions_blob_name: str = "istruzioni.md"
+
     # Ingestion
     chunk_max_chars: int = 1500
 

@@ -36,8 +36,12 @@ jobs:
           PREFIX="${{ vars.RESOURCE_PREFIX }}"
           APP="${PREFIX:+${PREFIX}-}sage-backend"
           IMAGE="${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/${APP}/${APP}:${SHORT_SHA}"
+          # Stessa regola di devops/cloud/locals.tf per il bucket delle istruzioni:
+          # "<prefisso>-instructions", oppure "<project_id>-instructions" senza prefisso.
+          INSTRUCTIONS_BUCKET="${PREFIX:-${{ vars.PROJECT_ID }}}-instructions"
           echo "app=$APP" >> "$GITHUB_OUTPUT"
           echo "tag=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "instructions_bucket=$INSTRUCTIONS_BUCKET" >> "$GITHUB_OUTPUT"
 
       - uses: docker/build-push-action@v6
         with:
@@ -47,8 +51,12 @@ jobs:
 
       - name: Deploy su Cloud Run
         run: |
+          # --update-env-vars (non --set-env-vars): aggiorna solo le due variabili delle
+          # istruzioni e lascia intatte quelle impostate da Terraform (progetto, regione,
+          # prefisso). Il bucket esiste già: lo crea devops/cloud/instructions.tf.
           gcloud run deploy "${{ steps.image.outputs.app }}" \
             --project "${{ vars.PROJECT_ID }}" \
             --region "${{ vars.REGION }}" \
-            --image "${{ steps.image.outputs.tag }}"
+            --image "${{ steps.image.outputs.tag }}" \
+            --update-env-vars "SAGE_INSTRUCTIONS_BUCKET_NAME=${{ steps.image.outputs.instructions_bucket }},SAGE_INSTRUCTIONS_BLOB_NAME=istruzioni.md"
 

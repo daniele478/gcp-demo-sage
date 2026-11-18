@@ -9,6 +9,7 @@ separazione dev/test/prod. Ogni studente applica questo modulo sul proprio proge
 |---|---|---|
 | `services.tf` | `google_project_service` | Abilita le API GCP usate dal progetto |
 | `docs.tf` | `google_storage_bucket` | Bucket dei documenti sorgente (`docs_bucket_name`, oppure `<project_id>-sage-docs` / `<prefisso>-sage-docs`) |
+| `instructions.tf` | `google_storage_bucket`, `google_storage_bucket_iam_member` | Bucket `<prefisso>-instructions` con il file di istruzioni letto a ogni domanda, e permesso `storage.objectViewer` al solo service account runtime |
 | `firestore.tf` | `google_firestore_database`, `google_firestore_index` | Firestore Native + indice vettoriale sul campo `embedding` della collection `chunks` |
 | `sage_backend.tf` | `google_artifact_registry_repository`, `google_cloud_run_v2_service`, `google_service_account`, `google_project_iam_member` | Repository Docker, servizio che espone `/api/ask`, service account runtime a privilegio minimo e relativi ruoli |
 | `locals.tf` | `locals` | Regole uniche per i nomi delle risorse (vedi sotto) |
@@ -30,7 +31,7 @@ servono API key esterne da custodire come segreto.
 adattato alle regole di ogni servizio:
 
 - Cloud Run e Artifact Registry: `<prefisso>-sage-backend`
-- Bucket: `<prefisso>-sage-docs` (e `<prefisso>-tfstate` per lo state)
+- Bucket: `<prefisso>-sage-docs` (documenti), `<prefisso>-instructions` (istruzioni aggiuntive) e `<prefisso>-tfstate` per lo state
 - Firestore: un database per persona, chiamato come il prefisso (in un progetto c'è un solo `(default)`)
 - BigQuery: dataset `<prefisso con _ al posto di ->_sage_analytics` (i dataset non ammettono trattini)
 - Service account: `<prefisso>-sage-backend-run`, accorciato con un hash se supera i 30 caratteri

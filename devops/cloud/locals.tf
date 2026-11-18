@@ -20,6 +20,15 @@ locals {
     )
   )
 
+  # Bucket delle istruzioni aggiuntive: "<prefisso>-instructions" in un progetto condiviso,
+  # "<project_id>-instructions" in quello dedicato. Non è configurabile da tfvars come
+  # docs_bucket_name perché lo crea sempre Terraform (non è un bucket da riusare).
+  instructions_bucket_name = (
+    var.resource_prefix == ""
+    ? "${var.project_id}-instructions"
+    : "${var.resource_prefix}-instructions"
+  )
+
   # In un progetto c'è un solo database "(default)"; in un progetto condiviso ogni studente
   # ha il proprio database, chiamato come il prefisso.
   firestore_database_name = var.resource_prefix == "" ? "(default)" : var.resource_prefix

@@ -27,6 +27,7 @@ Utente ──POST /api/ask──▶ API FastAPI su Cloud Run
 | Base di conoscenza | Firestore (Native mode) | Collection `chunks`: testo + embedding + metadati, interrogata con `find_nearest` |
 | LLM ed embedding | Vertex AI (Gemini) | Nessuna API key: autenticazione via ADC / service account |
 | Documenti sorgente | Cloud Storage | Bucket `<project_id>-sage-docs` (o `<prefisso>-sage-docs` in un progetto condiviso) |
+| Istruzioni aggiuntive | Cloud Storage | `istruzioni.md` in `<prefisso>-instructions`, letto a ogni domanda e aggiunto al prompt (stile, tono, vincoli) |
 | Analytics | BigQuery | Tabella `question_log`, scritta in modo sincrono nella richiesta (in questa copia è ancora uno stub, vedi sotto) |
 | Immagini container | Artifact Registry | Popolato dalla pipeline di deploy |
 
@@ -54,6 +55,23 @@ Logging, così è sempre visibile cosa sta succedendo e quale integrazione manca
 > **Nota su questa copia:** l'analytics su BigQuery non è ancora implementato.
 > `question_log.py` logga solo una riga `[MOCK]`, e in `devops/cloud/` non esiste ancora un
 > dataset BigQuery (né i permessi IAM per scriverci).
+
+### Istruzioni aggiuntive da Cloud Storage
+
+Oltre ai documenti, Sage legge un file di istruzioni da un bucket dedicato
+(`<prefisso>-instructions`, oppure `<project_id>-instructions` in un progetto dedicato) e lo
+aggiunge al prompt **a ogni domanda**: serve a cambiare stile e tono delle risposte senza
+toccare il codice.
+
+```bash
+gcloud storage cp istruzioni.md gs://<prefisso>-instructions/istruzioni.md
+```
+
+Non c'è cache: la modifica si vede dalla domanda successiva, senza redeploy (né
+re-ingestion, perché il file non viene indicizzato in Firestore). Il nome del bucket e
+dell'oggetto arrivano dalle variabili `SAGE_INSTRUCTIONS_BUCKET_NAME` e
+`SAGE_INSTRUCTIONS_BLOB_NAME`; se il file manca o il permesso non c'è, la risposta viene
+generata senza istruzioni e l'evento finisce nei log come `WARNING`.
 
 ## Struttura del repository
 

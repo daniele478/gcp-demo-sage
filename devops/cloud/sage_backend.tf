@@ -76,6 +76,15 @@ resource "google_cloud_run_v2_service" "sage_backend" {
         name  = "SAGE_RESOURCE_PREFIX"
         value = var.resource_prefix
       }
+      # Istruzioni aggiuntive lette da Cloud Storage a ogni domanda (vedi instructions.tf).
+      env {
+        name  = "SAGE_INSTRUCTIONS_BUCKET_NAME"
+        value = google_storage_bucket.instructions.name
+      }
+      env {
+        name  = "SAGE_INSTRUCTIONS_BLOB_NAME"
+        value = "istruzioni.md"
+      }
     }
   }
 
@@ -91,6 +100,7 @@ resource "google_cloud_run_v2_service" "sage_backend" {
   depends_on = [
     google_project_service.apis,
     google_project_iam_member.sage_run_vertex,
+    google_storage_bucket_iam_member.sage_run_instructions,
   ]
 }
 

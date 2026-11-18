@@ -4,6 +4,7 @@ import asyncio
 import time
 
 from sage.domain.qa.generation import generate_answer
+from sage.domain.qa.instructions import load_instructions
 from sage.domain.qa.retrieval import retrieve_relevant_chunks
 from sage.integrations.bigquery.question_log import log_question
 from sage.webapp.apis.qa.schemas import AskResponse, SourceChunk
@@ -12,8 +13,13 @@ from sage.webapp.apis.qa.schemas import AskResponse, SourceChunk
 async def ask_question(question: str) -> AskResponse:
     start = time.monotonic()
 
-    chunks = await retrieve_relevant_chunks(question)
-    answer = await generate_answer(question, chunks)
+    # Retrieval and instructions are independent: running them concurrently keeps the extra
+    # Cloud Storage read off the critical path.
+    chunks, instructions = await asyncio.gather(
+        retrieve_relevant_chunks(question),
+        load_instructions(),
+    )
+    answer = await generate_answer(question, chunks, instructions)
 
     latency_ms = int((time.monotonic() - start) * 1000)
 
