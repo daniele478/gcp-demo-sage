@@ -13,6 +13,10 @@ devops/cloud/.terraform/
 tfplan
 crash.log
 
+# Output temporanei salvati da `terraform plan` / `terraform apply`
+devops/cloud/plan*.txt
+devops/cloud/apply*.txt
+
 # OS / editor
 .DS_Store
 Thumbs.db
