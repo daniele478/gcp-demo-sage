@@ -46,6 +46,11 @@ terraform plan -var-file=terraform.tfvars   # nessuna sostituzione (-/+) sul buc
 Il bucket deve trovarsi nella stessa `region`: se è in un'altra regione il piano proporrebbe
 una sostituzione (distruzione e ricreazione).
 
+La pipeline `terraform.yml` non legge `terraform.tfvars`: passa `project_id`, `region`,
+`resource_prefix` e `docs_bucket_name` dalle variabili di repository GitHub. Se qui cambi
+`docs_bucket_name`, aggiorna anche la variabile `DOCS_BUCKET_NAME` su GitHub, altrimenti il
+piano della pipeline proporrà di sostituire il bucket.
+
 ## Perché l'immagine Cloud Run non è gestita da Terraform
 
 `sage_backend.tf` imposta `container_image` su un placeholder pubblico e poi lo ignora

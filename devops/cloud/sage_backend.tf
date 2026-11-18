@@ -34,6 +34,14 @@ resource "google_cloud_run_v2_service" "sage_backend" {
 
   deletion_protection = false
 
+  # Cloud Run restituisce sempre questo blocco a livello di servizio (min 0, manual 0) anche
+  # se non lo si imposta: dichiararlo evita un diff perpetuo dopo ogni `gcloud run deploy`
+  # della pipeline. I limiti di scala delle revisioni restano in template.scaling.
+  scaling {
+    min_instance_count    = 0
+    manual_instance_count = 0
+  }
+
   template {
     service_account = google_service_account.sage_run.email
 

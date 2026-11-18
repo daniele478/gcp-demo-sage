@@ -26,8 +26,8 @@ aggiungi (repository variables, non secrets — non sono informazioni sensibili)
 | Nome | Valore | Esempio |
 |---|---|---|
 | `PROJECT_ID` | Il tuo project id GCP | `its-ict-mario-rossi` |
-| `PROJECT_NUMBER` | Stampato dallo script | `123456789012` |
 | `RESOURCE_PREFIX` | Solo progetto condiviso: il tuo prefisso. In un progetto dedicato **non creare la variabile** | `its-ict-sage-mario-rossi` |
+| `DOCS_BUCKET_NAME` | Facoltativa: nome di un bucket documenti già esistente da riusare. Se la ometti, Terraform usa `<prefisso>-sage-docs` | `its-ict-mario-rossi-docs` |
 | `REGION` | Regione del corso | `europe-west6` |
 | `WIF_PROVIDER` | Stampato dallo script | `projects/.../workloadIdentityPools/github-actions-pool/providers/github-provider` |
 | `WIF_SERVICE_ACCOUNT` | Stampato dallo script | `github-deployer@its-ict-mario-rossi.iam.gserviceaccount.com` |

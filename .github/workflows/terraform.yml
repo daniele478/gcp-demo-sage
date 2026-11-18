@@ -62,6 +62,7 @@ jobs:
             -var "project_id=${{ vars.PROJECT_ID }}" \
             -var "region=${{ vars.REGION }}" \
             -var "resource_prefix=${{ vars.RESOURCE_PREFIX }}" \
+            -var "docs_bucket_name=${{ vars.DOCS_BUCKET_NAME }}" \
             -out=tfplan
 
       - uses: actions/upload-artifact@v4

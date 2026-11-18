@@ -221,6 +221,11 @@ Dove si imposta: `SAGE_RESOURCE_PREFIX` (`sources/backend/.env`), `resource_pref
 argomento di `setup-gcp-once.sh`. Se non è valorizzato restano i nomi del progetto dedicato;
 con un prefisso vuoto non creare la variabile `RESOURCE_PREFIX` su GitHub.
 
+Se hai già un bucket per i documenti e vuoi riusarlo invece di crearne un altro, valorizza
+`docs_bucket_name` in `terraform.tfvars` **e** la variabile di repository `DOCS_BUCKET_NAME`
+con lo stesso nome: la pipeline Terraform passa entrambe le variabili a `plan`, quindi se i
+due valori divergono il piano proporrebbe di ricreare il bucket.
+
 ## Pulizia risorse
 
 Quando hai finito, evita costi residui:
