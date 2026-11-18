@@ -1,5 +1,5 @@
 # Sage
-
+ 
 Sage è l'assistente Q&A del corso ITS ICT — GCP 2026: risponde a domande in linguaggio
 naturale su un insieme di documenti, usando il pattern RAG (Retrieval-Augmented
 Generation). Ogni domanda è indipendente dalle altre: nessuna memoria di conversazione.
