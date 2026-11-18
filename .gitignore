@@ -22,10 +22,3 @@ devops/cloud/apply*.txt
 Thumbs.db
 .vscode/
 .idea/
-
-# Istruzioni locali per gli agenti (non pubblicate)
-AGENTS.md
-
-# Claude Code (locale), tranne gli strumenti per la versione studenti (vedi .claude/student-version-diffs.md)
-.claude/*
-!.claude/student-version*
