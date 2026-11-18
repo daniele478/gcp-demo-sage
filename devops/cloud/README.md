@@ -8,7 +8,7 @@ separazione dev/test/prod. Ogni studente applica questo modulo sul proprio proge
 | File | Risorsa | A cosa serve |
 |---|---|---|
 | `services.tf` | `google_project_service` | Abilita le API GCP usate dal progetto |
-| `docs.tf` | `google_storage_bucket` | Bucket dei documenti sorgente (`<project_id>-sage-docs` o `<prefisso>-sage-docs`) |
+| `docs.tf` | `google_storage_bucket` | Bucket dei documenti sorgente (`docs_bucket_name`, oppure `<project_id>-sage-docs` / `<prefisso>-sage-docs`) |
 | `firestore.tf` | `google_firestore_database`, `google_firestore_index` | Firestore Native + indice vettoriale sul campo `embedding` della collection `chunks` |
 | `sage_backend.tf` | `google_artifact_registry_repository`, `google_cloud_run_v2_service`, `google_service_account`, `google_project_iam_member` | Repository Docker, servizio che espone `/api/ask`, service account runtime a privilegio minimo e relativi ruoli |
 | `locals.tf` | `locals` | Regole uniche per i nomi delle risorse (vedi sotto) |
@@ -34,6 +34,17 @@ adattato alle regole di ogni servizio:
 - Firestore: un database per persona, chiamato come il prefisso (in un progetto c'è un solo `(default)`)
 - BigQuery: dataset `<prefisso con _ al posto di ->_sage_analytics` (i dataset non ammettono trattini)
 - Service account: `<prefisso>-sage-backend-run`, accorciato con un hash se supera i 30 caratteri
+
+Se hai già un bucket per i documenti, valorizza `docs_bucket_name` in `terraform.tfvars` e
+importalo nello state, così Terraform lo gestisce senza ricrearlo:
+
+```bash
+terraform import -var-file=terraform.tfvars google_storage_bucket.sage_docs <nome-bucket>
+terraform plan -var-file=terraform.tfvars   # nessuna sostituzione (-/+) sul bucket
+```
+
+Il bucket deve trovarsi nella stessa `region`: se è in un'altra regione il piano proporrebbe
+una sostituzione (distruzione e ricreazione).
 
 ## Perché l'immagine Cloud Run non è gestita da Terraform
 

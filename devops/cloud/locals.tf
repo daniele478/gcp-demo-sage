@@ -7,12 +7,17 @@ locals {
     : "${var.resource_prefix}-${var.app_name}"
   )
 
-  # Bucket dei documenti: "<project_id>-sage-docs" nel progetto dedicato (stessa regola
-  # documentata nel README), "<prefisso>-sage-docs" in quello condiviso.
+  # Bucket dei documenti: se docs_bucket_name è valorizzato si riusa un bucket già esistente
+  # (da importare nello state), altrimenti "<project_id>-sage-docs" nel progetto dedicato o
+  # "<prefisso>-sage-docs" in quello condiviso.
   docs_bucket_name = (
-    var.resource_prefix == ""
-    ? "${var.project_id}-sage-docs"
-    : "${var.resource_prefix}-sage-docs"
+    var.docs_bucket_name != ""
+    ? var.docs_bucket_name
+    : (
+      var.resource_prefix == ""
+      ? "${var.project_id}-sage-docs"
+      : "${var.resource_prefix}-sage-docs"
+    )
   )
 
   # In un progetto c'è un solo database "(default)"; in un progetto condiviso ogni studente

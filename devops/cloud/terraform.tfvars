@@ -9,3 +9,7 @@ region     = "europe-west6"
 # nello stesso progetto (project_id sopra è il progetto condiviso). Con un progetto dedicato
 # va lasciato vuoto.
 resource_prefix = "its-ict-sage-daniele-buscemi"
+
+# Bucket dei documenti già esistente da riusare (vuoto = nome derivato dal prefisso).
+# Va importato nello state prima del primo apply: vedi devops/cloud/README.md.
+docs_bucket_name = "its-ict-daniele-buscemi-docs"
